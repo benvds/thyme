@@ -1,30 +1,40 @@
 // @flow
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import Input from 'semantic-ui-react/dist/commonjs/elements/Input';
 
+import { valueFromEventTarget } from 'core/dom';
+
 type DateInputType = {
   value: string,
-  setRef: (input: HTMLInputElement | null) => void,
-  onChange: (e: Event) => void,
-  onKeyPress: (e: KeyboardEvent) => void,
+  size: string,
+  onChange: (date: string) => void,
+  disabled?: boolean;
+  setRef?: any,
+  onKeyPress?: (e: KeyboardEvent) => void,
 };
 
 function DateInput({
   value,
+  size,
   setRef,
+  disabled,
   onChange,
   onKeyPress,
 }: DateInputType) {
+  const onChangeHandler = useCallback((e) => onChange(valueFromEventTarget(e.target)), [onChange]);
+
   return (
     <Input
       type="date"
+      disabled={disabled}
       ref={setRef}
       onKeyPress={onKeyPress}
-      onChange={onChange}
+      onChange={onChangeHandler}
       value={value}
-      size="small"
+      size={size}
+      required
     />
   );
 }

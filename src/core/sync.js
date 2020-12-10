@@ -2,20 +2,31 @@
 
 import debounce from 'lodash/debounce';
 import isEqual from 'lodash/isEqual';
-import type { Dispatch } from 'redux';
+import startOfDay from 'date-fns/start_of_day';
 
 import { sync, syncFailed, syncSuccess } from 'actions/app';
 
-import { isLoggedIn } from 'sections/Account/selectors';
+import { hasPremium } from 'sections/Account/selectors';
 
 import { post } from './fetch';
 import { stateToExport } from './importExport';
 import type { exportType } from './importExport';
 
-let prevState: exportType = { time: [], projects: [], reports: [] };
+let prevState: exportType = {
+  temporaryItem: {
+    start: startOfDay(new Date()),
+    end: startOfDay(new Date()),
+    project: null,
+    notes: '',
+    tracking: false,
+  },
+  time: [],
+  projects: [],
+  reports: [],
+};
 
-function syncWithApi(state: storeShape, dispatch: Dispatch<*>) {
-  if (!isLoggedIn(state)) {
+function syncWithApi(state: StateShape, dispatch: ThymeDispatch) {
+  if (!hasPremium(state)) {
     return;
   }
 

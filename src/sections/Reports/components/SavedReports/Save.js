@@ -2,7 +2,6 @@
 
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import type { Dispatch } from 'redux';
 
 import Header from 'semantic-ui-react/dist/commonjs/elements/Header';
 import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
@@ -31,10 +30,16 @@ type SaveState = {
 };
 
 class Save extends Component<SaveProps, SaveState> {
-  state = {
-    name: '',
-    error: false,
-  };
+  timeout: TimeoutID;
+
+  constructor() {
+    super();
+
+    this.state = {
+      name: '',
+      error: false,
+    };
+  }
 
   onUpdateName = (e: Event) => {
     if (e.target instanceof HTMLInputElement) {
@@ -87,8 +92,6 @@ class Save extends Component<SaveProps, SaveState> {
     onClose();
   };
 
-  timeout: TimeoutID;
-
   updateName(name: string) {
     this.setState({ name });
   }
@@ -130,7 +133,7 @@ class Save extends Component<SaveProps, SaveState> {
   }
 }
 
-function mapDispatchToProps(dispatch: Dispatch<*>) {
+function mapDispatchToProps(dispatch: ThymeDispatch) {
   return {
     onAddReport(name: string, filters: Array<string>, from: Date, to: Date) {
       dispatch(addReport(name, filters, from, to));

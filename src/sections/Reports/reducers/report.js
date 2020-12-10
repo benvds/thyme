@@ -1,6 +1,6 @@
 // @flow
 
-import { combineReducers } from 'redux';
+import { create } from 'register/reducer';
 
 function id(state = null, action) {
   switch (action.type) {
@@ -65,7 +65,7 @@ function createdAt(state = new Date(), action) {
   }
 }
 
-export default combineReducers({
+export default () => create('reports.report', {
   id,
   name,
   filters,

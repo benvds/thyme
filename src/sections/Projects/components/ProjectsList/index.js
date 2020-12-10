@@ -1,32 +1,69 @@
 // @flow
 
-import React, { Fragment } from 'react';
+import React from 'react';
 
 import Table from 'semantic-ui-react/dist/commonjs/collections/Table';
-import Responsive from 'semantic-ui-react/dist/commonjs/addons/Responsive/Responsive';
+
+import { render as renderComponent } from 'register/component';
+
+import { useResponsive } from 'components/Responsive';
 
 import ProjectsList from './ProjectsList';
 
-function projectsListWrapper({ projects }: { projects: Array<projectTreeType> }) {
+type ProjectsListWrapperProps = {
+  projects: ProjectTreeType[];
+  onUpdateProject: (project: ProjectProps) => void;
+  onRemoveProject: (id: string) => void;
+  onArchiveProject: (id: string) => void;
+  onChangeParent: (project: ProjectTreeType, parent: string | null) => void;
+};
+
+function ProjectsListWrapper(props: ProjectsListWrapperProps) {
+  const {
+    projects,
+    onUpdateProject,
+    onRemoveProject,
+    onArchiveProject,
+    onChangeParent,
+  } = props;
+  const [isMinTablet] = useResponsive({ min: 'tablet' });
+
+  if (projects.length === 0) {
+    return (
+      <div className="ProjectList--empty">
+        No projects added yet, add projects using above form.
+      </div>
+    );
+  }
+
   return (
     <Table>
-      <Responsive as={Fragment} minWidth={Responsive.onlyTablet.minWidth}>
+      {isMinTablet && (
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell>
               Name
             </Table.HeaderCell>
-            <Table.HeaderCell colSpan={2} width={6}>
+            {renderComponent('projects.tableheader.name', props)}
+            <Table.HeaderCell width={5}>
               Parent
+            </Table.HeaderCell>
+            {renderComponent('projects.tableheader.parent', props)}
+            <Table.HeaderCell width={1}>
             </Table.HeaderCell>
           </Table.Row>
         </Table.Header>
-      </Responsive>
+      )}
       <Table.Body>
-        <ProjectsList projects={projects} />
+        <ProjectsList
+          onUpdateProject={onUpdateProject}
+          onRemoveProject={onRemoveProject}
+          onArchiveProject={onArchiveProject}
+          onChangeParent={onChangeParent}
+        />
       </Table.Body>
     </Table>
   );
 }
 
-export default projectsListWrapper;
+export default ProjectsListWrapper;

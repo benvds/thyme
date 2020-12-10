@@ -1,9 +1,9 @@
 // @flow
 
-export function updateDurationRounding(round: rounding) {
+export function updateDurationRounding(rounding: Rounding) {
   return {
     type: 'UPDATE_DURATION_ROUNDING',
-    rounding: round,
+    rounding,
   };
 }
 
@@ -14,7 +14,7 @@ export function updateDurationRoundingAmount(amount: number) {
   };
 }
 
-export function updateRoundingOn(roundingOn: roundableOn) {
+export function updateRoundingOn(roundingOn: RoundableOn) {
   return {
     type: 'UPDATE_ROUNDING_ON',
     roundingOn,
@@ -25,6 +25,13 @@ export function updatePerPage(perPage: number | string) {
   return {
     type: 'UPDATE_PER_PAGE',
     perPage,
+  };
+}
+
+export function updateApiRoot(apiRoot: ?string) {
+  return {
+    type: 'UPDATE_API_ROOT',
+    apiRoot,
   };
 }
 

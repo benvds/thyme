@@ -1,13 +1,13 @@
 // @flow
 
-export function addTime(entry: timePropertyType) {
+export function addTime(entry: TimePropertyType) {
   return {
     type: 'ADD_TIME',
     ...entry,
   };
 }
 
-export function updateTime(entry: { id: string } & timePropertyType) {
+export function updateTime(entry: TimeType | TimePropertyType) {
   return {
     type: 'UPDATE_TIME',
     ...entry,
@@ -25,17 +25,10 @@ export function truncateTime() {
   return { type: 'TRUNCATE_TIME' };
 }
 
-export function changeDateRange(dateRange: dateRanges) {
+export function changeDateRange(dateRange: DateRanges) {
   return {
     type: 'CHANGE_DATE_RANGE',
     dateRange,
-  };
-}
-
-export function changeDateSort(dateSort: sortDirection) {
-  return {
-    type: 'CHANGE_DATE_SORT',
-    dateSort,
   };
 }
 

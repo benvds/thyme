@@ -1,6 +1,6 @@
 // @flow
 
-import { combineReducers } from 'redux';
+import { create } from 'register/reducer';
 
 function id(state = null, action) {
   switch (action.type) {
@@ -26,6 +26,25 @@ function name(state = '', action) {
     case 'ADD_PROJECT':
     case 'UPDATE_PROJECT':
       return action.name;
+    default:
+      return state;
+  }
+}
+
+function colour(state = null, action) {
+  switch (action.type) {
+    case 'ADD_PROJECT':
+    case 'UPDATE_PROJECT':
+      return action.colour || null;
+    default:
+      return state;
+  }
+}
+
+function archived(state = false, action) {
+  switch (action.type) {
+    case 'ARCHIVE_PROJECT':
+      return !state;
     default:
       return state;
   }
@@ -60,13 +79,13 @@ function updatedAt(state = new Date(), action) {
   }
 }
 
-const project = combineReducers({
+export default () => create('projects.project', {
   id,
   parent,
   name,
+  colour,
+  archived,
   removed,
   createdAt,
   updatedAt,
 });
-
-export default project;

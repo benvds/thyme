@@ -1,0 +1,59 @@
+.Account__Submit-Bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.Account__Sub-Bar {
+  margin: 2em 0 1em 0;
+  text-align: center;
+}
+
+.Account__Sub-Bar .ui.basic.button,
+.Account__Sub-Bar .ui.basic.button:hover {
+  box-shadow: none !important;
+  margin-left: 5px;
+}
+
+.Account__Sub-Bar .ui.basic.button:hover {
+  text-decoration: underline;
+}
+
+.ui.form .Account__Submit-Bar .field,
+.Account__Submit-Bar .button.basic {
+  margin: 0;
+  width: 100%;
+}
+
+.Account-PopUp-Content {
+  overflow: hidden;
+  display: flex;
+  width: 300px;
+}
+
+.ui.menu .item.Account-BackUp {
+  line-height: 1.4em;
+  font-weight: 600;
+  text-align: center;
+}
+
+.Account-BackUp .ui.button {
+  margin: 1em 0 0 0;
+}
+
+.Login {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.Account-PopUp .message.small {
+  padding: 1em;
+}
+
+.ui.popup.Account-PopUp {
+  padding: 0;
+}
+
+.ui.popup .Account-PopUp-Content {
+  margin: 0.833em 1em;
+}

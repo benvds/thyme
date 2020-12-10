@@ -18,3 +18,19 @@ export function refreshToken(): Promise<string> {
 export function getState(): Promise<exportType> {
   return get('/get-state');
 }
+
+export function getAccountInformation(): Promise<AccountInformation> {
+  return get('/account-information');
+}
+
+export function buySubscription(token: string, values: any): Promise<Boolean> {
+  return post('/buy-subscription', { token, values });
+}
+
+export function getSubscriptions(): Promise<SubscriptionInfo[]> {
+  return get('/list-subscriptions');
+}
+
+export function changePassword(currentPassword: string, password: string): Promise<string> {
+  return post('/change-password', { currentPassword, password });
+}

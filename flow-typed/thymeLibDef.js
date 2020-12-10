@@ -1,27 +1,28 @@
 // @flow
 
-import type { Store } from 'redux';
+import type { Store, Dispatch } from 'redux';
+import type { Node } from 'react';
 
-declare type timeShape = {
+declare type TimeShape = {
   byId: {
-    [key: string]: timeType;
+    [key: string]: TimeType;
   };
   allIds: string[];
-  dateRange: dateRanges;
-  dateSort: sortDirection;
+  dateRange: DateRanges;
+  dateSort: SortDirection;
   page: number;
 };
 
-declare type projectsShape = {
+declare type ProjectsShape = {
   byId: {
-    [key: string]: projectType;
+    [key: string]: ProjectType;
   };
   allIds: string[];
 };
 
-declare type reportsShape = {
+declare type ReportsShape = {
   byId: {
-    [key: string]: reportType;
+    [key: string]: ReportType;
   };
   allIds: string[];
   filters: Array<string | null>;
@@ -29,40 +30,55 @@ declare type reportsShape = {
   to: Date | string;
 };
 
-declare type settingsRounding = {
-  durationRounding: rounding;
-  durationRoundingAmount: number;
-  roundingOn: roundableOn;
+declare type ExportShape = {
+  time: TimeShape;
+  projects: ProjectsShape;
+  reports: ReportsShape;
 };
 
-declare type settingsTimesheet = {
+declare type SettingsRounding = {
+  durationRounding: Rounding;
+  durationRoundingAmount: number;
+  roundingOn: RoundableOn;
+};
+
+declare type SettingsTimesheet = {
   perPage: number;
   enableNotes: boolean;
   enableProjects: boolean;
   enableEndDate: boolean;
 };
 
-declare type settingsShape = {
-  rounding: settingsRounding;
-  timesheet: settingsTimesheet;
+declare type SettingsAdvanced = {
+  apiRoot: string;
 };
 
-declare type storeShape = {
+declare type SettingsShape = {
+  rounding: SettingsRounding;
+  timesheet: SettingsTimesheet;
+  advanced: SettingsAdvanced;
+};
+
+declare type StateShape = {
   account: {
     jwt: string | null;
+    isLoaded: boolean;
+    isPremium: boolean;
   };
   app: {
     alert: string;
     syncing: boolean;
+    lastSync: Date;
     update: boolean;
+    plugins: string[];
   };
-  time: timeShape;
-  projects: projectsShape;
-  reports: reportsShape;
-  settings: settingsShape;
+  time: TimeShape;
+  projects: ProjectsShape;
+  reports: ReportsShape;
+  settings: SettingsShape;
 };
 
-declare type reportType = {
+declare type ReportType = {
   id: string;
   name: string;
   from: string;
@@ -72,59 +88,103 @@ declare type reportType = {
   createdAt: string;
 };
 
-declare type projectType = {
+declare type ProjectColour = 'red' | 'orange' | 'yellow' | 'olive' | 'green' | 'teal' | 'blue' |
+  'violet' | 'purple' | 'pink' | 'brown' | 'grey' | 'black' | 'neutral';
+
+declare type ProjectProps = {
   id: string;
   parent: string | null;
+  colour: ProjectColour | null;
   name: string;
+  archived?: boolean;
+};
+
+declare type ProjectType = {
   removed?: boolean;
   createdAt: string;
   updatedAt: string;
-};
+} & ProjectProps;
 
-declare type projectTreeType = projectType & { nameTree: Array<string> };
-declare type projectTreeWithTimeType = projectTreeType & { time: number, entries: Array<timeType> };
+declare type ProjectTreeType = ProjectType & { nameTree: Array<string> };
+declare type ProjectTreeWithTimeType = ProjectTreeType & { time: number, entries: Array<TimeType> };
 
-declare type timePropertyType = {
+declare type TimePropertyType = {
   project: string | null;
   start: Date;
   end: Date;
   notes: string;
 }
 
-declare type tempTimePropertyType = {
+declare type TempTimePropertyType = {
   tracking: boolean;
-} & timePropertyType;
+  updatedAt: number;
+} & TimePropertyType;
 
-declare type timeType = {
+declare type TimeType = {
   id: string;
   removed?: boolean;
   createdAt: string;
   updatedAt: string;
-} & timePropertyType;
+} & TimePropertyType;
 
-declare type dateRanges = 'today' | 'week' | 'weekToDate' | 'month' | 'older';
-declare type sortDirection = 'desc' | 'asc';
+declare type DateRanges = 'today' | 'week' | 'weekToDate' | 'month' | 'older';
+declare type SortDirection = 'desc' | 'asc';
 
-declare type rounding = 'none' | 'round' | 'ceil' | 'floor';
-declare type roundableOn = 'entries' | 'reports';
+declare type Rounding = 'none' | 'round' | 'ceil' | 'floor';
+declare type RoundableOn = 'entries' | 'reports';
 
-declare type RouterLocation = {
-  pathname: string;
-  search: string;
-  hash: string;
-  state?: any;
-  key?: string;
+declare type ActionsObservable = {
+  pipe: any;
 };
 
-declare type RouterMatch = {
-  isExact: boolean;
-  params: any;
-  path: string;
+declare type StateObservable = {
+  value: StateShape;
+};
+
+declare type AccountInformation = {
+  capabilities: string[];
+};
+
+declare type SettingsPanel = {
+  name: string;
   url: string;
+  content: Node;
 };
 
-declare type RouterHistory = {
-  push: (path: string) => void;
+declare type SubscriptionInfo = {
+  periodEnd: number;
+  plan: 'EUR' | 'USD';
 };
 
-declare type ThymeStore = Store<storeShape, *>;
+declare type RenderProp = (...any) => Node;
+
+declare type TableColumn = {
+  name: string;
+  row: RenderProp;
+  header?: RenderProp;
+  footer?: RenderProp;
+  textAlign?: 'left' | 'right';
+  width?: number;
+  collapsing?: boolean;
+  style?: any;
+};
+
+declare type ContextType = {
+  settingsPanels: SettingsPanel[];
+  components: {
+    [name: string]: { key: string, render: Node }[];
+  };
+  columns: {
+    [name: string]: TableColumn[];
+  };
+  hiddenColumns: {
+    [name: string]: string[];
+  };
+};
+
+declare type ThymeStore = Store<StateShape, *>;
+declare type ThymeDispatch = Dispatch<*>;
+
+// for extension development
+declare var browser: any;
+declare var chrome: any;

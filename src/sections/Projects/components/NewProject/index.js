@@ -1,128 +1,144 @@
 // @flow
 
-import React, { Component, Fragment } from 'react';
-import { connect } from 'react-redux';
-import type { Dispatch } from 'redux';
+import React, { useState, useCallback } from 'react';
 
 import Button from 'semantic-ui-react/dist/commonjs/elements/Button';
 import Input from 'semantic-ui-react/dist/commonjs/elements/Input';
 import Form from 'semantic-ui-react/dist/commonjs/collections/Form';
-import Responsive from 'semantic-ui-react/dist/commonjs/addons/Responsive/Responsive';
 
 import { valueFromEventTarget } from 'core/dom';
+import { useActions } from 'core/useActions';
 
-import ProjectInput from 'sections/Projects/components/ProjectInput';
+import { useResponsive } from 'components/Responsive';
+
+import ProjectInput from '../ProjectInput';
+import ProjectColourPicker from '../ProjectColourPicker';
 
 import { addProject } from '../../actions';
 
-import './NewProject.css';
+import { defaultColour } from '../../colours';
 
 function defaultState() {
   return {
+    colour: defaultColour,
     name: '',
     parent: null,
   };
 }
 
-type NewProjectStateType = {
-  name: string,
-  parent: string | null,
-};
+function useNewProjectState(defaultProject = defaultState()) {
+  const [colour, setColour] = useState<ProjectColour>(defaultProject.colour);
+  const [name, setName] = useState<string>(defaultProject.name);
+  const [parent, setParent] = useState<string | null>(defaultProject.parent);
 
-type NewProjectType = {
-  onAddProject: (project: NewProjectStateType) => void,
-};
-
-class NewProject extends Component<NewProjectType, NewProjectStateType> {
-  state = defaultState();
-
-  onNameChange = (e: Event) => this.onValueChange('name', valueFromEventTarget(e.target));
-
-  onProjectChange = (e: Event, project: { value: string | null, label: string }) => (
-    this.onValueChange(
-      'parent', project === null ? null : project.value,
-    )
-  );
-
-  onSubmit = () => this.addNew();
-
-  onValueChange(key: string, value: string | null) {
-    this.setState({
-      [key]: value,
-    });
+  function resetState() {
+    setColour(defaultProject.colour);
+    setName(defaultProject.name);
+    setParent(defaultProject.parent);
   }
 
-  addNew() {
-    const { onAddProject } = this.props;
-    const { name } = this.state;
+  return {
+    colour,
+    name,
+    parent,
+    setColour,
+    setName,
+    setParent,
+    resetState,
+  };
+}
 
+function NewProject() {
+  const {
+    colour,
+    name,
+    parent,
+    setColour,
+    setName,
+    setParent,
+    resetState,
+  } = useNewProjectState();
+  const [showLabels] = useResponsive({ max: 'tablet' });
+  const onAddProject = useActions(useCallback((project) => addProject({ ...project }), []));
+
+  const onSubmit = useCallback(() => {
     if (name.trim() === '') {
       return;
     }
 
     onAddProject({
-      ...this.state,
+      colour,
+      name,
+      parent,
     });
 
-    this.setState(defaultState());
-  }
+    resetState();
+  }, [name, colour, parent, onAddProject, resetState]);
 
-  render() {
-    const { name, parent } = this.state;
+  const onNameChange = useCallback(
+    (e: Event) => setName(valueFromEventTarget(e.target)),
+    [setName],
+  );
 
-    return (
-      <div className="NewProject">
-        <Form onSubmit={this.onSubmit}>
-          <Form.Group widths="equal">
-            <Form.Field>
-              <Responsive as={Fragment} maxWidth={Responsive.onlyTablet.minWidth}>
-                <label htmlFor="project-name">
-                  Project name
-                </label>
-              </Responsive>
-              <Input
-                id="project-name"
-                name="project-name"
-                className="NewProject__input"
-                type="text"
-                placeholder="Project name"
-                value={name}
-                onChange={this.onNameChange}
-                style={{ marginRight: 12 }}
-              />
-            </Form.Field>
-            <Form.Field>
-              <Responsive as={Fragment} maxWidth={Responsive.onlyTablet.minWidth}>
-                <label>
-                  Parent project
-                </label>
-              </Responsive>
-              <ProjectInput
-                placeholder="Select parent..."
-                handleChange={this.onProjectChange}
-                value={parent}
-              />
-            </Form.Field>
-            <Form.Field>
-              <Button color="blue" type="submit">
-                Add project
-              </Button>
-            </Form.Field>
-          </Form.Group>
-        </Form>
-      </div>
-    );
-  }
+  const onProjectChange = useCallback(
+    (value: string | null) => setParent(value),
+    [setParent],
+  );
+
+  return (
+    <div className="NewProject">
+      <Form onSubmit={onSubmit}>
+        <Form.Group widths="equal">
+          <Form.Field width={2}>
+            {showLabels && (
+              <label htmlFor="project-colour">
+                Colour
+              </label>
+            )}
+            <ProjectColourPicker colour={colour} onChange={setColour} />
+          </Form.Field>
+          <Form.Field>
+            {showLabels && (
+              <label htmlFor="project-name">
+                Project name
+              </label>
+            )}
+            <Input
+              id="project-name"
+              name="project-name"
+              className="NewProject__input"
+              type="text"
+              placeholder="Project name"
+              value={name}
+              onChange={onNameChange}
+              style={{ marginRight: 12 }}
+            />
+          </Form.Field>
+          <Form.Field>
+            {showLabels && (
+              <label>
+                Parent project
+              </label>
+            )}
+            <ProjectInput
+              placeholder="Select parent..."
+              handleChange={onProjectChange}
+              value={parent}
+            />
+          </Form.Field>
+          <Form.Field width={8}>
+            <Button
+              icon="add"
+              color="blue"
+              fluid
+              type="submit"
+              content="Add project"
+            />
+          </Form.Field>
+        </Form.Group>
+      </Form>
+    </div>
+  );
 }
 
-function mapDispatchToProps(dispatch: Dispatch<*>) {
-  return {
-    onAddProject(project) {
-      dispatch(addProject({
-        ...project,
-      }));
-    },
-  };
-}
-
-export default connect(null, mapDispatchToProps)(NewProject);
+export default NewProject;

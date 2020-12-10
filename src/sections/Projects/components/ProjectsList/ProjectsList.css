@@ -15,6 +15,15 @@
   align-items: center;
 }
 
-.ProjectList__level-1 .icon {
+.ProjectList__level-1 .ProjectList__item-container > .icon {
   display: none;
+}
+
+.ProjectList--empty {
+  font-size: 1.3em;
+  margin: 2em 0;
+}
+
+.ProjectList__item--archived {
+  opacity: 0.5;
 }

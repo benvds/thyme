@@ -1,10 +1,11 @@
 // @flow
 
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import type { Dispatch } from 'redux';
+import React, { useCallback } from 'react';
+import { useSelector } from 'react-redux';
 
 import Menu from 'semantic-ui-react/dist/commonjs/collections/Menu';
+
+import { useActions } from 'core/useActions';
 
 import { changeDateRange } from '../../actions';
 
@@ -12,85 +13,68 @@ import { getDateRange } from '../../selectors';
 
 type DateRangeProps = {
   vertical?: boolean;
-  dateRange: dateRanges;
-  changeDateRange: (dateRange: dateRanges) => void;
 };
 
-class DateRange extends Component<DateRangeProps> {
-  constructor(props) {
-    super(props);
-
-    this.toggleToday = () => { props.changeDateRange('today'); };
-    this.toggleThisWeek = () => { props.changeDateRange('week'); };
-    this.toggleWeekToDate = () => { props.changeDateRange('weekToDate'); };
-    this.toggleLastMonth = () => { props.changeDateRange('month'); };
-    this.toggleOlder = () => { props.changeDateRange('older'); };
-  }
-
-  toggleToday: () => void;
-
-  toggleThisWeek: () => void;
-
-  toggleWeekToDate: () => void;
-
-  toggleLastMonth: () => void;
-
-  toggleOlder: () => void;
-
-  render() {
-    const { dateRange, vertical = false } = this.props;
-
-    return (
-      <Menu
-        secondary
-        vertical={vertical}
-        style={{ marginBottom: 0 }}
-      >
-        <Menu.Item
-          active={dateRange === 'today'}
-          onClick={this.toggleToday}
-        >
-          Today
-        </Menu.Item>
-        <Menu.Item
-          active={dateRange === 'week'}
-          onClick={this.toggleThisWeek}
-        >
-          This week
-        </Menu.Item>
-        <Menu.Item
-          active={dateRange === 'weekToDate'}
-          onClick={this.toggleWeekToDate}
-        >
-          Week to date
-        </Menu.Item>
-        <Menu.Item
-          active={dateRange === 'month'}
-          onClick={this.toggleLastMonth}
-        >
-          Last month
-        </Menu.Item>
-        <Menu.Item
-          active={dateRange === 'older'}
-          onClick={this.toggleOlder}
-        >
-          Older
-        </Menu.Item>
-      </Menu>
-    );
-  }
-}
-
-function mapStateToProps(state) {
-  return { dateRange: getDateRange(state) };
-}
-
-function mapDispatchToProps(dispatch: Dispatch<*>) {
+function useToggleHandlers(onChangeDateRange: (dateRange: DateRanges) => void) {
   return {
-    changeDateRange(dateRange: dateRanges) {
-      dispatch(changeDateRange(dateRange));
-    },
+    toggleToday: useCallback(() => { onChangeDateRange('today'); }, [onChangeDateRange]),
+    toggleThisWeek: useCallback(() => { onChangeDateRange('week'); }, [onChangeDateRange]),
+    toggleWeekToDate: useCallback(() => { onChangeDateRange('weekToDate'); }, [onChangeDateRange]),
+    toggleLastMonth: useCallback(() => { onChangeDateRange('month'); }, [onChangeDateRange]),
+    toggleOlder: useCallback(() => { onChangeDateRange('older'); }, [onChangeDateRange]),
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(DateRange);
+function DateRange({ vertical = false }: DateRangeProps) {
+  const dateRange = useSelector(getDateRange);
+  const onChangeDateRange = useActions(changeDateRange);
+
+  const {
+    toggleToday,
+    toggleThisWeek,
+    toggleWeekToDate,
+    toggleLastMonth,
+    toggleOlder,
+  } = useToggleHandlers(onChangeDateRange);
+
+  return (
+    <Menu
+      secondary
+      vertical={vertical}
+      style={{ marginBottom: 0 }}
+    >
+      <Menu.Item
+        active={dateRange === 'today'}
+        onClick={toggleToday}
+      >
+        Today
+      </Menu.Item>
+      <Menu.Item
+        active={dateRange === 'week'}
+        onClick={toggleThisWeek}
+      >
+        This week
+      </Menu.Item>
+      <Menu.Item
+        active={dateRange === 'weekToDate'}
+        onClick={toggleWeekToDate}
+      >
+        Week to date
+      </Menu.Item>
+      <Menu.Item
+        active={dateRange === 'month'}
+        onClick={toggleLastMonth}
+      >
+        Last month
+      </Menu.Item>
+      <Menu.Item
+        active={dateRange === 'older'}
+        onClick={toggleOlder}
+      >
+        Older
+      </Menu.Item>
+    </Menu>
+  );
+}
+
+export default DateRange;

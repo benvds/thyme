@@ -1,9 +1,9 @@
 // @flow
-import React, { Component, Fragment } from 'react';
+
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import format from 'date-fns/format';
 import FileSaver from 'file-saver';
-import type { Dispatch } from 'redux';
 
 import Button from 'semantic-ui-react/dist/commonjs/elements/Button';
 import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon/Icon';
@@ -27,6 +27,8 @@ type ImportExportState = {
 };
 
 class ImportExport extends Component<ImportExportProps, ImportExportState> {
+  uploadInput: HTMLInputElement;
+
   constructor() {
     super();
 
@@ -38,11 +40,11 @@ class ImportExport extends Component<ImportExportProps, ImportExportState> {
     input.addEventListener('change', this.handleFileChange.bind(this));
 
     this.uploadInput = input;
-  }
 
-  state = {
-    confirmImport: false,
-  };
+    this.state = {
+      confirmImport: false,
+    };
+  }
 
   onCancelConfirm = () => this.setState({ confirmImport: false });
 
@@ -91,20 +93,18 @@ class ImportExport extends Component<ImportExportProps, ImportExportState> {
   handleFileChange = (e: Event) => {
     if (e.target instanceof HTMLInputElement && e.target.files instanceof FileList) {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        this.handleImportData(ev.target.result);
+      reader.onload = () => {
+        if (typeof reader.result === 'string') this.handleImportData(reader.result);
       };
       reader.readAsText(e.target.files[0]);
     }
   };
 
-  uploadInput: HTMLInputElement;
-
   render() {
     const { confirmImport } = this.state;
 
     return (
-      <Fragment>
+      <>
         <Button color="blue" onClick={this.exportData}>
           <Icon name="download" />
           Export data
@@ -121,14 +121,14 @@ class ImportExport extends Component<ImportExportProps, ImportExportState> {
           onCancel={this.onCancelConfirm}
           onConfirm={this.openImportInput}
         />
-      </Fragment>
+      </>
     );
   }
 }
 
-const mapStateToProps = state => ({ exportState: getDataToExport(state) });
+const mapStateToProps = (state) => ({ exportState: getDataToExport(state) });
 
-function mapDispatchToProps(dispatch: Dispatch<*>) {
+function mapDispatchToProps(dispatch: ThymeDispatch) {
   return {
     importData(data) {
       dispatch(importJSONData(data));

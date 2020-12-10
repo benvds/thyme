@@ -1,141 +1,125 @@
 // @flow
 
-import React, { Component } from 'react';
+import React, { useState, useCallback } from 'react';
 import format from 'date-fns/format';
-import classnames from 'classnames';
 
-import Table from 'semantic-ui-react/dist/commonjs/collections/Table';
-import Accordion from 'semantic-ui-react/dist/commonjs/modules/Accordion';
-import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
 import Checkbox from 'semantic-ui-react/dist/commonjs/modules/Checkbox';
-import Popup from 'semantic-ui-react/dist/commonjs/modules/Popup/Popup';
 
-import { timeElapsed } from 'core/thyme';
+import { sortByTime, timeElapsed } from 'core/thyme';
+import { treeDisplayName } from 'core/projects';
+
+import { create as createTable } from 'register/table';
 
 import './ReportDetailed.css';
 
-type ReportColumn = 'date' | 'start' | 'end' | 'duration' | 'project' | 'notes';
-
-type ReportDetailedType = {
-  round: rounding;
+type ReportDetailedProps = {
+  enabledEndDate: boolean;
+  round: Rounding;
   roundAmount: number;
-  projects: projectTreeWithTimeType[];
+  projects: ProjectTreeWithTimeType[];
 };
 
-type ReportDetailedState = {
-  opened: boolean;
-  printable: {
-    [ReportColumn]: boolean;
-  };
-};
+const sortAsc = sortByTime('asc');
 
-class ReportDetailed extends Component<ReportDetailedType, ReportDetailedState> {
-  state = {
-    opened: false,
-    printable: {
-      date: true,
-      start: true,
-      end: true,
-      duration: true,
-      project: true,
-      notes: true,
-    },
-  };
+function ReportDetailed({
+  round,
+  roundAmount,
+  projects,
+  enabledEndDate,
+}: ReportDetailedProps) {
+  const [isOpened, setIsOpened] = useState(false);
 
-  onChangePrintable = (e: Event, data: { checked: boolean, column: ReportColumn }) => {
-    const { printable } = this.state;
+  const toggleDetails = useCallback(
+    (e: Event, data: { checked: boolean }) => setIsOpened(data.checked),
+    [],
+  );
 
-    this.setState({
-      printable: {
-        ...printable,
-        [data.column]: data.checked,
-      },
-    });
-  };
+  const rows = projects
+    .reduce((acc, project) => [
+      ...acc,
+      ...project.entries.map((entry) => ({
+        ...entry,
+        project,
+      })),
+    ], [])
+    .sort(sortAsc);
 
-  toggleDetails = () => {
-    const { opened } = this.state;
-
-    this.setState({
-      opened: !opened,
-    });
-  };
-
-  columnHeader = (column: ReportColumn) => {
-    const { printable } = this.state;
-
-    return (
-      <Table.HeaderCell key={column} className={classnames({ 'no-print': !printable[column] })}>
-        <Popup
-          inverted
-          trigger={(
-            <Checkbox
-              label={`${column[0].toUpperCase()}${column.slice(1)}`}
-              checked={printable[column]}
-              column={column}
-              onClick={this.onChangePrintable}
-            />
-          )}
-          content={`Show '${column}' on printed version`}
-        />
-      </Table.HeaderCell>
-    );
-  };
-
-  render() {
-    const { round, roundAmount, projects } = this.props;
-    const { opened, printable } = this.state;
-
-    return (
-      <Accordion className="ReportDetailed">
-        <Accordion.Title active={opened} onClick={this.toggleDetails}>
-          <Icon name="dropdown" />
-          Detailed view
-        </Accordion.Title>
-        <Accordion.Content active={opened}>
-          <Table celled>
-            <Table.Header>
-              <Table.Row>
-                {['date', 'start', 'end', 'duration', 'project', 'notes']
-                  .map(column => this.columnHeader(column))}
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {projects.map(project => project.entries.map(entry => (
-                <Table.Row key={entry.id}>
-                  <Table.Cell className={classnames({ 'no-print': !printable.date })}>
-                    {format(entry.start, 'DD/MM/YYYY')}
-                  </Table.Cell>
-                  <Table.Cell className={classnames({ 'no-print': !printable.start })}>
-                    {format(entry.start, 'HH:mm')}
-                  </Table.Cell>
-                  <Table.Cell className={classnames({ 'no-print': !printable.end })}>
-                    {format(entry.end, 'HH:mm')}
-                  </Table.Cell>
-                  <Table.Cell className={classnames({ 'no-print': !printable.duration })}>
-                    {timeElapsed(
-                      entry.start,
-                      entry.end,
-                      false,
-                      false,
-                      round,
-                      roundAmount,
-                    )}
-                  </Table.Cell>
-                  <Table.Cell className={classnames({ 'no-print': !printable.project })}>
-                    {project.nameTree.join(' > ')}
-                  </Table.Cell>
-                  <Table.Cell className={classnames({ 'no-print': !printable.notes })}>
-                    {entry.notes}
-                  </Table.Cell>
-                </Table.Row>
-              )))}
-            </Table.Body>
-          </Table>
-        </Accordion.Content>
-      </Accordion>
-    );
+  if (rows.length === 0) {
+    return null;
   }
+
+  const reportTable = createTable(
+    'reports.detailed', [
+      {
+        name: enabledEndDate ? 'Start Date' : 'Date',
+        header: () => (enabledEndDate ? 'Start Date' : 'Date'),
+        row: (entry) => format(entry.start, 'DD/MM/YYYY'),
+        collapsing: true,
+      },
+      {
+        name: 'Start',
+        header: () => 'Start',
+        row: (entry) => format(entry.start, 'HH:mm'),
+        collapsing: true,
+      },
+      enabledEndDate ? {
+        name: 'End Date',
+        header: () => 'End Date',
+        row: (entry) => format(entry.end, 'DD/MM/YYYY'),
+        collapsing: true,
+      } : null,
+      {
+        name: 'End',
+        header: () => 'End',
+        row: (entry) => format(entry.end, 'HH:mm'),
+        collapsing: true,
+      },
+      {
+        name: 'Duration',
+        header: () => 'Duration',
+        row: (entry) => timeElapsed(
+          entry.start,
+          entry.end,
+          false,
+          false,
+          round,
+          roundAmount,
+        ),
+        textAlign: 'right',
+        collapsing: true,
+      },
+      {
+        name: 'Project',
+        header: () => 'Project',
+        row: (entry) => treeDisplayName(entry.project),
+        collapsing: true,
+      },
+      {
+        name: 'Notes',
+        header: () => 'Notes',
+        row: (entry) => entry.notes,
+      },
+    ],
+    rows,
+  );
+
+  return (
+    <section className="ReportDetailed">
+      <div className="ReportDetailed__toggle">
+        <Checkbox
+          label="Detailed view"
+          toggle
+          checked={isOpened}
+          onChange={toggleDetails}
+          style={isOpened ? { marginRight: '2em' } : {}}
+        />
+
+        {isOpened && reportTable.filters}
+      </div>
+
+      {isOpened && reportTable.table}
+    </section>
+  );
 }
 
 export default ReportDetailed;

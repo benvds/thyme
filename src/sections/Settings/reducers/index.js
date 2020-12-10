@@ -1,11 +1,13 @@
 // @flow
 
-import { combineReducers } from 'redux';
+import { create } from 'register/reducer';
 
-import rounding from './rounding';
-import timesheet from './timesheet';
+import createRoundingReducer from './rounding';
+import createTimesheetReducer from './timesheet';
+import createAdvancedReducer from './advanced';
 
-export default combineReducers({
-  rounding,
-  timesheet,
+export default () => create('settings', {
+  rounding: createRoundingReducer(),
+  timesheet: createTimesheetReducer(),
+  advanced: createAdvancedReducer(),
 });

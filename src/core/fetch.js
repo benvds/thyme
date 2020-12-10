@@ -1,9 +1,18 @@
 // @flow
 
-const apiRoot = process.env.REACT_APP_API_ROOT || '//localhost:4000';
+import { getApiRoot } from 'sections/Settings/selectors';
+
 let getState = () => undefined;
 
 function createUrl(url: string) {
+  const state = getState();
+
+  if (!state) {
+    throw new Error('Tried to get state before available');
+  }
+
+  const apiRoot = getApiRoot(state);
+
   return `${apiRoot}${url}`;
 }
 
@@ -50,7 +59,7 @@ function request(method: 'POST' | 'GET' = 'GET', url: string, data?: any) {
           })
           .catch((err) => {
             // if json failed to parse
-            if (err.name === '‌SyntaxError') {
+            if (err instanceof SyntaxError) {
               throw new Error(response.statusText);
             }
 
@@ -68,4 +77,10 @@ export function post(url: string, data: any) {
 
 export function get(url: string) {
   return request('GET', url);
+}
+
+export function isValidThymeApi(url: string): Promise<boolean> {
+  return fetch(url)
+    .then((response) => response.headers.get('API-Consumer') === 'Thyme')
+    .catch(() => false);
 }

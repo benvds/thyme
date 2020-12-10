@@ -37,10 +37,15 @@ export function loadState(): {} | typeof undefined {
   return loadItem('ThymeState');
 }
 
-export function saveState(state: storeShape): void {
+export function saveState(state: StateShape): void {
   // persist everything but the app and form state
   saveItem({
     ...state,
+    account: {
+      ...state.account,
+      isLoaded: false,
+      isPremium: [],
+    },
     reports: {
       ...state.reports,
       filters: undefined,
@@ -52,12 +57,12 @@ export function saveState(state: storeShape): void {
   }, 'ThymeState');
 }
 
-export function loadTemporaryItem(): tempTimePropertyType | typeof undefined {
+export function loadTemporaryItem(): TempTimePropertyType | typeof undefined {
   return loadItem('ThymeTempItem');
 }
 
-export function saveTemporaryItem(state: tempTimePropertyType): void {
-  saveItem(state, 'ThymeTempItem');
+export function saveTemporaryItem(item: TempTimePropertyType): void {
+  saveItem(item, 'ThymeTempItem');
 }
 
 export function clearTemporaryItem() {

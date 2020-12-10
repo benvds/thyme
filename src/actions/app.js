@@ -1,9 +1,9 @@
 // @flow
 
 export type importDataType = {
-  time: Array<timeType>,
-  projects: Array<projectType>,
-  reports: Array<reportType>,
+  time: Array<TimeType>,
+  projects: Array<ProjectType>,
+  reports: Array<ReportType>,
 };
 
 export function importJSONData(data: importDataType) {
@@ -42,4 +42,19 @@ export function syncFailed(error: Error) {
 
 export function syncSuccess() {
   return { type: 'SYNC_SUCCESS' };
+}
+
+export function appInit() {
+  return { type: 'APP_INIT' };
+}
+
+export function checkForUpdate() {
+  return { type: 'APP_CHECK_UPDATE' };
+}
+
+export function pluginInit(name: string) {
+  return {
+    type: 'PLUGIN_INIT',
+    name,
+  };
 }

@@ -1,10 +1,10 @@
 // @flow
 
-import { combineReducers } from 'redux';
+import { create } from 'register/reducer';
 
-import time from './time';
+import createTimeReducer from './time';
 
-function byId(state = {}, action) {
+const byId = (time) => (state = {}, action) => {
   switch (action.type) {
     // targeted updates
     case 'ADD_TIME':
@@ -34,32 +34,23 @@ function byId(state = {}, action) {
     default:
       return state;
   }
-}
+};
 
 function allIds(state = [], action) {
   switch (action.type) {
     case 'ADD_TIME':
       return [...state, action.id];
     case 'IMPORT_JSON_DATA':
-      return action.time.map(item => item.id);
+      return action.time.map((item) => item.id);
     default:
       return state;
   }
 }
 
-function dateRange(state = 'today', action): dateRanges {
+function dateRange(state = 'today', action): DateRanges {
   switch (action.type) {
     case 'CHANGE_DATE_RANGE':
       return action.dateRange;
-    default:
-      return state;
-  }
-}
-
-function dateSort(state = 'desc', action): sortDirection {
-  switch (action.type) {
-    case 'CHANGE_DATE_SORT':
-      return action.dateSort;
     default:
       return state;
   }
@@ -77,10 +68,9 @@ function page(state = 1, action): number {
   }
 }
 
-export default combineReducers({
-  byId,
+export default () => create('timesheet', {
+  byId: byId(createTimeReducer()),
   allIds,
   dateRange,
-  dateSort,
   page,
 });

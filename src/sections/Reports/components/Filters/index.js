@@ -1,70 +1,57 @@
 // @flow
 
-import React, { Component } from 'react';
-import classnames from 'classnames';
+import React, { Fragment, useCallback } from 'react';
+import type { Node } from 'react';
 
-import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
-import Menu from 'semantic-ui-react/dist/commonjs/collections/Menu';
 import Checkbox from 'semantic-ui-react/dist/commonjs/modules/Checkbox';
+import Dropdown from 'semantic-ui-react/dist/commonjs/modules/Dropdown';
 
-import './ReportFilters.css';
+import './Filters.css';
 
-type ReportFiltersType = {
+type ReportFiltersProps = {
   filters: Array<string>;
-  projects: Array<projectTreeWithTimeType>;
-  onToggle: (project: string | null) => void;
+  projects: Array<ProjectTreeWithTimeType>;
+  columnFilters: Node;
+  onToggleProject: (project: string | null) => void;
 };
 
-type ReportFiltersState = {
-  isVisible: boolean;
-};
+function ReportFilters({
+  filters,
+  projects,
+  columnFilters,
+  onToggleProject,
+}: ReportFiltersProps) {
+  const onFilterToggle = useCallback((name: string) => (e: Event) => {
+    // prevent closing dropdown
+    e.stopPropagation();
 
-class ReportFilters extends Component<ReportFiltersType, ReportFiltersState> {
-  state = {
-    isVisible: false,
-  };
+    onToggleProject(name === '' ? null : name);
+  }, [onToggleProject]);
 
-  onFilterToggle = (e: Event, action: any) => {
-    if (action.type === 'checkbox') {
-      const { onToggle } = this.props;
-      const { name } = action;
-      onToggle(name === '' ? null : name);
-    }
-  };
-
-  onToggleFiltersVisible = () => {
-    const { isVisible } = this.state;
-
-    this.setState({ isVisible: !isVisible });
-  };
-
-  render() {
-    const { filters, projects } = this.props;
-    const { isVisible } = this.state;
-
-    return (
-      <div className="Report__filters">
-        <Menu vertical>
-          <Menu.Item header as="button" onClick={this.onToggleFiltersVisible}>
-            <Icon name="triangle right" className={classnames({ isVisible })} />
-            Filter projects
-          </Menu.Item>
-          {isVisible && projects.map(project => (
-            <Menu.Item key={project.id}>
-              <Checkbox
-                toggle
-                label={project.name}
-                checked={filters.indexOf(project.id) > -1}
-                onChange={this.onFilterToggle}
-                name={project.id}
-                id={project.id}
-              />
-            </Menu.Item>
+  return (
+    <div className="Report__filters">
+      <Dropdown text="Filter projects" closeOnBlur={false} style={{ marginRight: '2em' }}>
+        <Dropdown.Menu>
+          {projects.map((project, index) => (
+            <Fragment key={project.id}>
+              {index > 0 && project.nameTree.length === 1 && <Dropdown.Divider />}
+              <Dropdown.Item onClick={onFilterToggle(project.id)}>
+                <Checkbox
+                  style={{ paddingLeft: (project.nameTree.length - 1) * 20 }}
+                  label={project.name}
+                  checked={filters.indexOf(project.id) > -1}
+                  name={project.id}
+                  id={project.id}
+                />
+              </Dropdown.Item>
+            </Fragment>
           ))}
-        </Menu>
-      </div>
-    );
-  }
+        </Dropdown.Menu>
+      </Dropdown>
+
+      {columnFilters}
+    </div>
+  );
 }
 
 export default ReportFilters;

@@ -1,13 +1,14 @@
 // @flow
 
-import { combineReducers } from 'redux';
+import { create } from 'register/reducer';
 
-import project from './project';
+import createProjectReducer from './project';
 
-function byId(state = {}, action) {
+const byId = (project) => (state = {}, action) => {
   switch (action.type) {
     case 'ADD_PROJECT':
     case 'UPDATE_PROJECT':
+    case 'ARCHIVE_PROJECT':
     case 'REMOVE_PROJECT':
       return {
         ...state,
@@ -26,20 +27,20 @@ function byId(state = {}, action) {
     default:
       return state;
   }
-}
+};
 
 function allIds(state = [], action) {
   switch (action.type) {
     case 'ADD_PROJECT':
       return [...state, action.id];
     case 'IMPORT_JSON_DATA':
-      return action.projects.map(item => item.id);
+      return action.projects.map((item) => item.id);
     default:
       return state;
   }
 }
 
-export default combineReducers({
-  byId,
+export default () => create('projects', {
+  byId: byId(createProjectReducer()),
   allIds,
 });

@@ -1,12 +1,15 @@
 // @flow
 
-import React, { Component, Fragment } from 'react';
-import { connect } from 'react-redux';
-import { compose } from 'redux';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
+import { useSelector } from 'react-redux';
 import { withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import classnames from 'classnames';
-import type { Dispatch } from 'redux';
+import type { Location } from 'react-router';
 
 import Container from 'semantic-ui-react/dist/commonjs/elements/Container';
 import Image from 'semantic-ui-react/dist/commonjs/elements/Image';
@@ -14,48 +17,57 @@ import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
 import Menu from 'semantic-ui-react/dist/commonjs/collections/Menu';
 import Modal from 'semantic-ui-react/dist/commonjs/modules/Modal';
 import Sidebar from 'semantic-ui-react/dist/commonjs/modules/Sidebar';
-import Responsive from 'semantic-ui-react/dist/commonjs/addons/Responsive';
 
-import { clearAlert } from 'actions/app';
+import { useActions } from 'core/useActions';
+
+import { clearAlert, appInit, checkForUpdate } from 'actions/app';
 
 import { getAlert } from 'selectors/app';
 
-import Account from 'sections/Account';
+import Account from 'sections/Account/components/MenuItem';
 
+import { useResponsive } from '../Responsive';
 import Notifier from '../Notifier';
+import CompletePurchase from '../BuySubscription/Complete';
 
 import thyme from './Thyme.svg';
+
 import './App.css';
 import './print.css';
 
-type AppType = {
-  location: RouterLocation;
+type AppProps = {
+  location: Location;
   children: any;
-  alertMessage: string;
-  onCloseAlert: () => void;
 }
 
-type AppState = {
-  menuOpened: boolean;
+function useMenuOpened(initialValue: boolean) {
+  const [menuOpened, setMenuOpened] = useState<boolean>(initialValue);
+
+  function handleToggle() {
+    setMenuOpened(!menuOpened);
+  }
+
+  function handleClose() {
+    setMenuOpened(false);
+  }
+
+  return [menuOpened, handleToggle, handleClose];
 }
 
-class App extends Component<AppType, AppState> {
-  state = {
-    menuOpened: false,
-  };
+function App({
+  children,
+  location,
+}: AppProps) {
+  const alertMessage = useSelector(getAlert);
+  const [
+    onInitialize,
+    onCloseAlert,
+    onCheckForUpdate,
+  ] = useActions([appInit, clearAlert, checkForUpdate]);
 
-  handleToggle = () => {
-    const { menuOpened } = this.state;
-
-    this.setState({ menuOpened: !menuOpened });
-  };
-
-  handleClose = () => {
-    this.setState({ menuOpened: false });
-  };
-
-  AppLink(name, path, icon: string, exact = false) {
-    const { location } = this.props;
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [menuOpened, handleToggle, handleClose] = useMenuOpened(false);
+  const appLink = useCallback((name, path, icon: string, exact = false) => {
     const currentPath = location.pathname;
 
     return (
@@ -66,60 +78,84 @@ class App extends Component<AppType, AppState> {
             : currentPath.indexOf(path) === 0,
         })}
         to={path}
-        onClick={this.handleClose}
+        onClick={handleClose}
       >
         <Icon name={icon} />
         {name}
       </Link>
     );
-  }
+  }, [location, handleClose]);
 
-  render() {
-    const {
-      children,
-      alertMessage,
-      onCloseAlert,
-    } = this.props;
-    const { menuOpened } = this.state;
+  // callback on mount
+  useEffect(() => {
+    if (isInitialized) return;
 
-    const MenuItems = (
-      <Fragment>
-        {this.AppLink('Timesheet', '/', 'stopwatch', true)}
-        {this.AppLink('Reports', '/reports', 'chart pie')}
-        {this.AppLink('Projects', '/projects', 'sitemap')}
-        {this.AppLink('Settings', '/settings', 'cog')}
-        <a href="https://usethyme.com/documentation" className="item">
-          <Icon name="help circle" />
-          Support
-        </a>
-        <Menu.Menu position="right">
-          <Menu.Item>
-            <Account />
-          </Menu.Item>
-        </Menu.Menu>
-      </Fragment>
-    );
+    onInitialize();
+    setIsInitialized(true);
+  }, [onInitialize, isInitialized]);
 
-    return (
-      <div className="App">
-        <Sidebar.Pushable>
-          <Sidebar
-            as={Menu}
-            animation="overlay"
-            icon="labeled"
-            inverted
-            vertical
-            visible={menuOpened}
-            onHide={this.handleClose}
-          >
-            {MenuItems}
-          </Sidebar>
+  // check version every one so often
+  useEffect(() => {
+    const waitingTime = 1000 * 60 * 10; // 10 minutes
+    const intervalId = setInterval(onCheckForUpdate, waitingTime);
 
-          <Sidebar.Pusher dimmed={menuOpened}>
-            <Menu fixed="top" inverted>
-              <Container>
-                <Responsive as={Fragment} maxWidth={Responsive.onlyTablet.minWidth}>
-                  <Menu.Item position="left" onClick={this.handleToggle}>
+    return () => clearInterval(intervalId);
+  }, [onCheckForUpdate]);
+
+  const [isDesktop] = useResponsive({ min: 'desktop' });
+
+  const MenuItems = (
+    <>
+      {appLink('Timesheet', '/', 'stopwatch', true)}
+      {appLink('Reports', '/reports', 'chart pie')}
+      {appLink('Projects', '/projects', 'sitemap')}
+      {appLink('Settings', '/settings', 'cog')}
+      <a href="https://usethyme.com/documentation" className="item">
+        <Icon name="help circle" />
+        Support
+      </a>
+      <Menu.Menu position="right">
+        <Menu.Item>
+          <Account />
+        </Menu.Item>
+      </Menu.Menu>
+    </>
+  );
+
+  return (
+    <div className="App">
+      <Sidebar.Pushable>
+        <Sidebar
+          as={Menu}
+          animation="overlay"
+          icon="labeled"
+          inverted
+          vertical
+          visible={menuOpened}
+          onHide={handleClose}
+        >
+          {isDesktop ? null : MenuItems}
+        </Sidebar>
+
+        <Sidebar.Pusher dimmed={menuOpened}>
+          <Menu fixed="top" inverted>
+            <Container>
+              {isDesktop ? (
+                <>
+                  <Link className="header item" to="/">
+                    <Image
+                      size="mini"
+                      src={thyme}
+                      alt="Thyme"
+                      style={{ width: 24, marginRight: '1.5em' }}
+                    />
+                    Thyme
+                  </Link>
+                  {MenuItems}
+                </>
+              ) : (
+                <>
+                  <Menu.Item position="left" onClick={handleToggle}>
                     <Icon name="sidebar" />
                   </Menu.Item>
                   <Menu.Item className="App-Title">
@@ -131,57 +167,30 @@ class App extends Component<AppType, AppState> {
                     />
                     Thyme
                   </Menu.Item>
-                </Responsive>
-                <Responsive as={Fragment} minWidth={Responsive.onlyTablet.minWidth}>
-                  <Link className="header item" to="/">
-                    <Image
-                      size="mini"
-                      src={thyme}
-                      alt="Thyme"
-                      style={{ width: 24, marginRight: '1.5em' }}
-                    />
-                    Thyme
-                  </Link>
-                  {MenuItems}
-                </Responsive>
-              </Container>
-            </Menu>
-            <Container fluid className="App__Container">
-              <Modal
-                open={alertMessage !== ''}
-                onClose={onCloseAlert}
-                content={alertMessage}
-                size="mini"
-                actions={[
-                  { key: 'OK', content: 'OK', positive: true },
-                ]}
-              />
-              <Notifier />
-
-              {children}
+                </>
+              )}
             </Container>
-          </Sidebar.Pusher>
-        </Sidebar.Pushable>
-      </div>
-    );
-  }
+          </Menu>
+          <Container fluid className="App__Container">
+            <Modal
+              open={alertMessage !== ''}
+              onClose={onCloseAlert}
+              content={alertMessage}
+              size="mini"
+              actions={[
+                { key: 'OK', content: 'OK', positive: true },
+              ]}
+            />
+
+            <CompletePurchase />
+            <Notifier />
+
+            {children}
+          </Container>
+        </Sidebar.Pusher>
+      </Sidebar.Pushable>
+    </div>
+  );
 }
 
-function mapStateToProps(state) {
-  return {
-    alertMessage: getAlert(state),
-  };
-}
-
-function mapDispatchToProps(dispatch: Dispatch<*>) {
-  return {
-    onCloseAlert() {
-      dispatch(clearAlert());
-    },
-  };
-}
-
-export default compose(
-  withRouter,
-  connect(mapStateToProps, mapDispatchToProps),
-)(App);
+export default withRouter<*>(App);

@@ -1,6 +1,6 @@
 // @flow
 
-import { combineReducers } from 'redux';
+import { create } from 'register/reducer';
 
 function id(state = null, action) {
   switch (action.type) {
@@ -49,7 +49,7 @@ function notes(state = '', action) {
   switch (action.type) {
     case 'ADD_TIME':
     case 'UPDATE_TIME':
-      return action.notes;
+      return action.notes || '';
     default:
       return state;
   }
@@ -84,7 +84,7 @@ function updatedAt(state = new Date(), action) {
   }
 }
 
-const time = combineReducers({
+export default () => create('timesheet.time', {
   id,
   project,
   start,
@@ -94,5 +94,3 @@ const time = combineReducers({
   createdAt,
   updatedAt,
 });
-
-export default time;

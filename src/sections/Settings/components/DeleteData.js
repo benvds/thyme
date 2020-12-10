@@ -1,8 +1,7 @@
 // @flow
 
-import React, { Component, Fragment } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import type { Dispatch } from 'redux';
 
 import Button from 'semantic-ui-react/dist/commonjs/elements/Button';
 import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon/Icon';
@@ -24,10 +23,14 @@ type DeleteDataState = {
 }
 
 class DeleteData extends Component<DeleteDataProps, DeleteDataState> {
-  state = {
-    confirmRemoveTimesheet: false,
-    confirmRemoveProjects: false,
-  };
+  constructor() {
+    super();
+
+    this.state = {
+      confirmRemoveTimesheet: false,
+      confirmRemoveProjects: false,
+    };
+  }
 
   onRemoveTime = () => { this.setState({ confirmRemoveTimesheet: true }); };
 
@@ -63,7 +66,7 @@ class DeleteData extends Component<DeleteDataProps, DeleteDataState> {
     } = this.state;
 
     return (
-      <Fragment>
+      <>
         <Button color="red" onClick={this.onRemoveTime}>
           <Icon name="trash" />
           Remove timesheet data
@@ -89,12 +92,12 @@ class DeleteData extends Component<DeleteDataProps, DeleteDataState> {
           onCancel={this.onCancelConfirm}
           onConfirm={this.onConfirmRemoveProjects}
         />
-      </Fragment>
+      </>
     );
   }
 }
 
-function mapDispatchToProps(dispatch: Dispatch<*>) {
+function mapDispatchToProps(dispatch: ThymeDispatch) {
   return {
     removeTimeData() {
       dispatch(truncateTime());

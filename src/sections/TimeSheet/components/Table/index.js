@@ -1,169 +1,104 @@
 // @flow
 
-import React, { Fragment } from 'react';
-import { connect } from 'react-redux';
-import type { Dispatch } from 'redux';
+import React from 'react';
+import { useSelector } from 'react-redux';
 
-import Table from 'semantic-ui-react/dist/commonjs/collections/Table';
-import Responsive from 'semantic-ui-react/dist/commonjs/addons/Responsive/Responsive';
+import isSameDay from 'date-fns/is_same_day';
+
+import { useActions } from 'core/useActions';
 
 import {
   getDurationRounding,
   getDurationAmount,
   getRoundingOn,
-  getEnableNotes,
-  getEnableProjects,
-  getEnableEndDate,
 } from 'sections/Settings/selectors';
-
-import { addProject } from 'sections/Projects/actions';
+import { getAllProjects } from 'sections/Projects/selectors';
 
 import { updateTime, removeTime } from '../../actions';
 
-import { getDateSort } from '../../selectors';
-
-import { NewEntry, Entry } from '../Entry';
+import DayHeader from './DayHeader';
+import ListEntry from './ListEntry';
 
 type TimeTableType = {
-  sort: sortDirection;
-  entries: Array<timeType>;
+  entries: TimeType[];
   now: Date;
-  round: rounding;
-  roundAmount: number;
   enabledNotes: boolean;
   enabledProjects: boolean;
   enabledEndDate: boolean;
-  onAddProject: (project: string) => string;
-  onEntryUpdate: (entry: timePropertyType) => void;
-  onEntryRemove: (id: string) => void;
+  onAddProject: (project: string, entry?: TimeType | TimePropertyType) => string;
 };
 
+const selectors = (state) => {
+  const roundingOn = getRoundingOn(state);
+  return {
+    projects: getAllProjects(state),
+    round: roundingOn === 'entries' ? getDurationRounding(state) : 'none',
+    roundAmount: roundingOn === 'entries' ? getDurationAmount(state) : 0,
+  };
+};
+
+const actions = [
+  updateTime,
+  (entry: TimeType) => removeTime(entry.id),
+];
+
 function TimeTable({
-  sort,
   entries,
   now,
-  round,
-  roundAmount,
   enabledNotes,
   enabledProjects,
   enabledEndDate,
-  onEntryUpdate,
-  onEntryRemove,
   onAddProject,
 }: TimeTableType) {
-  const New = (
-    <NewEntry
-      now={now}
-      enabledNotes={enabledNotes}
-      enabledProjects={enabledProjects}
-      enabledEndDate={enabledEndDate}
-      onAddNewProject={onAddProject}
-    />
-  );
+  const {
+    projects,
+    round,
+    roundAmount,
+  } = useSelector(selectors);
 
-  const Entries = (
-    <Fragment>
-      {sort === 'desc' && New}
-      {entries.map(entry => (
-        <Entry
-          key={entry.id}
-          round={round}
-          roundAmount={roundAmount}
-          entry={entry}
-          now={now}
-          enabledNotes={enabledNotes}
-          enabledProjects={enabledProjects}
-          enabledEndDate={enabledEndDate}
-          onAddNewProject={onAddProject}
-          onUpdate={onEntryUpdate}
-          onRemove={onEntryRemove}
-        />
-      ))}
-      {sort === 'asc' && New}
-    </Fragment>
-  );
+  const [onEntryUpdate, onEntryRemove] = useActions(actions);
 
-  const TableContent = (
-    <Table basic="very">
-      <Table.Header>
-        <Table.Row>
-          <Table.HeaderCell>
-            {enabledEndDate ? 'Start date' : 'Date'}
-          </Table.HeaderCell>
-          <Table.HeaderCell>
-            {enabledEndDate ? 'Start time' : 'Start'}
-          </Table.HeaderCell>
-          {enabledEndDate && (
-            <Table.HeaderCell>
-              End date
-            </Table.HeaderCell>
-          )}
-          <Table.HeaderCell>
-            {enabledEndDate ? 'End time' : 'End'}
-          </Table.HeaderCell>
-          <Table.HeaderCell>
-            Duration
-          </Table.HeaderCell>
-          {enabledProjects && (
-            <Table.HeaderCell>
-              Project
-            </Table.HeaderCell>
-          )}
-          {enabledNotes && (
-            <Table.HeaderCell>
-              Notes
-            </Table.HeaderCell>
-          )}
-          <Table.HeaderCell />
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {Entries}
-      </Table.Body>
-    </Table>
-  );
+  const days = [];
+
+  const firstEntries = entries.filter((entry) => {
+    if (days.some((day) => isSameDay(entry.start, day))) {
+      return false;
+    }
+
+    days.push(entry.start);
+
+    return true;
+  });
 
   return (
-    <Fragment>
-      <Responsive as={Fragment} maxWidth={Responsive.onlyTablet.minWidth}>
-        {Entries}
-      </Responsive>
-      <Responsive as={Fragment} minWidth={Responsive.onlyTablet.minWidth}>
-        {TableContent}
-      </Responsive>
-    </Fragment>
+    <section className="TimeSheet__Entries">
+      {entries.map((entry) => (
+        <div key={entry.id}>
+          {firstEntries.find((e) => e.id === entry.id) && (
+            <DayHeader
+              date={entry.start}
+              entries={entries.filter((e) => isSameDay(e.start, entry.start))}
+              round={round}
+              roundAmount={roundAmount}
+            />
+          )}
+          <ListEntry
+            round={round}
+            roundAmount={roundAmount}
+            projects={projects}
+            entry={entry}
+            now={now}
+            enabledNotes={enabledNotes}
+            enabledProjects={enabledProjects}
+            enabledEndDate={enabledEndDate}
+            onRemove={onEntryRemove}
+            onEntryUpdate={onEntryUpdate}
+            onAddProject={onAddProject}
+          />
+        </div>
+      ))}
+    </section>
   );
 }
 
-function mapStateToProps(state) {
-  const roundingOn = getRoundingOn(state);
-
-  return {
-    sort: getDateSort(state),
-    round: roundingOn === 'entries' ? getDurationRounding(state) : 'none',
-    roundAmount: roundingOn === 'entries' ? getDurationAmount(state) : 0,
-    enabledNotes: getEnableNotes(state),
-    enabledProjects: getEnableProjects(state),
-    enabledEndDate: getEnableEndDate(state),
-  };
-}
-
-function mapDispatchToProps(dispatch: Dispatch<*>) {
-  return {
-    onEntryUpdate(entry) {
-      dispatch(updateTime(entry));
-    },
-    onEntryRemove(id) {
-      dispatch(removeTime(id));
-    },
-    onAddProject(project) {
-      const newProjectAction = addProject({ parent: null, name: project });
-
-      dispatch(newProjectAction);
-
-      return newProjectAction.id;
-    },
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(TimeTable);
+export default TimeTable;
